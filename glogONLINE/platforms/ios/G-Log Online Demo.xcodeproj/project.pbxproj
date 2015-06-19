@@ -5,7 +5,6 @@
 	};
 	objectVersion = 46;
 	objects = {
-
 /* Begin PBXBuildFile section */
 		1B0898BDC0404DEE9797C664 /* MWScannerViewController.xib in Sources */ = {isa = PBXBuildFile; fileRef = 8DC51DFC13E9447DB7A2F48E /* MWScannerViewController.xib */; };
 		1D3623260D0F684500981E51 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623250D0F684500981E51 /* AppDelegate.m */; };
