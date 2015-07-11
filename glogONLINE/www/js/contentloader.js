@@ -30,11 +30,11 @@
                     $('nav , footer').show();
                     $('.splashscreencont').remove();
                     
-					   chooseurl();
+					  //chooseurl();
                   
                   
-                    //askExit();    
-                    //openHomePage();
+                    askExit();    
+                    openHomePage();
 
 
 

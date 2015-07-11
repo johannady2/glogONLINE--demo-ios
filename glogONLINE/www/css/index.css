@@ -411,11 +411,12 @@ body
 }
 
 
-.viewItem , .addToList,.addToCart , .saveChanges , .removeFromCart , .SearchBtn , .addToPrestaCart ,.yesExit, .noContinue , .g-log , .viveg
+.viewItem , .addToList,.addToCart , .saveChanges , .removeFromCart , .SearchBtn , .addToPrestaCart ,.yesExit, .noContinue , .g-log , .viveg ,.ScanAgain , .proceedToCheckOut
 {
     width:100%;
     min-height:50px;
     font-size:25px;
+    color:#ffffff;
     
 }
 
@@ -450,7 +451,13 @@ body
 .orderAllCancel:visited,
 .addToCartAgree:visited,
 .addToCartCancel:visited,
-.addToPrestaCart:visited
+.addToPrestaCart:visited,
+.yesExit:visited,
+.noContinue:visited ,
+.g-log:visited ,
+.viveg:visited ,
+.ScanAgain:visited ,
+.proceedToCheckOut:visited
 {
     color:#ffffff;
 }
@@ -873,7 +880,7 @@ video#bgvid{
     }
 
     
-    .viewItem , .addToList,.addToCart , .saveChanges , .removeFromCart , .SearchBtn , .addToPrestaCart ,.yesExit, .noContinue , .g-log , .viveg
+    .viewItem , .addToList,.addToCart , .saveChanges , .removeFromCart , .SearchBtn , .addToPrestaCart ,.yesExit, .noContinue , .g-log , .viveg ,.ScanAgain , .proceedToCheckOut
     {
         width:100%;
         font-weight:bold;

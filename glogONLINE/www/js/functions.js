@@ -1,4 +1,4 @@
-	var glogOrViveg = '';
+	var glogOrViveg = 'g-log.co';
 
     var networkstatus = '';
     var ref = null;
@@ -11,13 +11,9 @@
     var stocksavailable;   
     var onlineSingleItemStocksAvailable;
 
+    var isTimeOUtOn = 0;
 
-    var scancounter;
-    var locationcounter;
-    var closecounter;
-          
-
-    var bTimerId;                                                 
+    var onlineSingleInterval;
 
     var timerId;
     setTimeout(function()
@@ -30,8 +26,7 @@
 
 
 
-
-
+   
 
 
 	if(scanResultWhenOffline == null)//initialize when not initialized
@@ -56,6 +51,17 @@
 
 
 
+    $('.content-cont').bind("DOMSubtreeModified",function()
+    {  //clearing interval when not in single page
+        if($('.single-cont').length <= 0 && $('.splashpageindicator').length <= 0 && isTimeOUtOn == 1)
+        {
+            isTimeOUtOn = 0;
+            
+            clearInterval(onlineSingleInterval);
+            
+        }
+    });
+
 
 	function onDeviceOffline()
 	{
@@ -64,7 +70,8 @@
 		$('.splashscreencont').hide();
 		$('.noti-blanket , .noti-offline').show();
 
-			networkstatus = 'disconnected';
+        ref.close();
+		networkstatus = 'disconnected';
 
 
 	}
@@ -83,8 +90,12 @@
 		{
 			renderOnlineSinglePage(scanResultWhenOffline);
 		}
-
-
+        
+        if($('.splashscreencont').length <= 0)//splashscreencont is removed when start browsing is clicked. 
+        {
+            askExit();//only ask exit if the splash screen is not visible. otherwise continue shopping and exit button will show up in splashscreen.
+        }
+        
 		$('.noti-blanket, .noti-offline, .splashscreencont').hide();
 		$('.splashscreencont').show();
 		$('.splashloading').hide();
@@ -166,13 +177,117 @@ function bugFix()//sometimes noti popups don't appear so we check it and make th
 	/*----------------------------------------------------------------------*/
 	/*-------------------online-single-item.html------------------------------*/
 	/*----------------------------------------------------------------------*/
+
+
+    function updateInfo(scanResult)
+    {
+        $.when($.getJSON('http://'+glogOrViveg+'/api4v2.php?format=json&barcode='+scanResult+'&user=wcu&pass=v1v3g')).done(function(forOnlineSingleData)
+				{
+
+						$.each(forOnlineSingleData, function( index, value ) 
+						  {
+
+								$.each(value, function(inde, valu)
+								{
+									$.each(valu, function(ind, val)
+									{
+										$.each( val, function( i, v )
+										{
+
+
+												if(i == 'PictureFileName_InvtyCat')
+												{	
+													onlineSingleItemPictureFileName = val[i];
+												}
+												else if(i == 'Barcode_InvtyCat')
+												{
+													onlineSingleItemBarcode = val[i];
+												}
+												else if(i == 'Brand_InvtyCat')
+												{
+													onlineSingleItemBrand = val[i];
+												}
+												else if(i == 'FullDescription_InvtyCat')
+												{
+													 onlineSingleItemFullDescription = val[i];
+												}
+												else if(i == 'PromoName_InvtyCat')
+												{
+													 onlineSingleItemPromoName = val[i];
+												}
+												else if(i == 'PromoPrice_InvtyCat')
+												{
+													 onlineSingleItemPromoPrice = val[i];
+												}
+                                                else if(i == 'Stock_InvtyCat')
+                                                {
+                                                    onlineSingleItemStocksAvailable = val[i];
+                                                }
+                
+
+										});	
+
+									});	
+
+								});
+						  });
+
+
+				}).then(function(objects)
+				{
+
+                    if(onlineSingleItemBarcode != null && onlineSingleItemBarcode != '')
+					{
+                        	$('.addToPrestaCart').attr('data-barcode',onlineSingleItemBarcode);
+							$('.onlineSingleItemPromoPrice').html(onlineSingleItemPromoPrice);
+							$('.glogtotal').html(onlineSingleItemPromoPrice);
+							$('.onlineSingleItemPictureFileName').attr('src',onlineSingleItemPictureFileName);
+							$('.onlineSingleItemFullDescription').html(onlineSingleItemFullDescription);
+							$('.onlineSingleItemBrand').html(onlineSingleItemBrand);
+							$('.onlineSingleItemPromoName').html(onlineSingleItemPromoName);
+							$('.onlineSingleItemStocksAvailable').html(onlineSingleItemStocksAvailable);
+                        
+                        
+                        /*because when item is not available, variables are not updated which causes the last avaialble item to appear on online-single-item.html... By assigning them with '' value, I can output, "iteme unavailable" when value is '' item is not available according to the api*/
+                            onlineSingleItemPictureFileName = '';
+							onlineSingleItemBarcode = '';
+							onlineSingleItemBrand = '';
+							onlineSingleItemFullDescription = '';
+							onlineSingleItemPromoName = '';
+							onlineSingleItemPromoPrice = '';
+                            stocksavailable =  onlineSingleItemStocksAvailable;
+                            onlineSingleItemStocksAvailable = '';
+                        
+                        
+                        if($('#onlineSingleItemEnteredQuantity').val() > stocksavailable)
+                        {
+                            
+                            $('.noti-any , .noti-blanket').show();
+                            $('.noti-any').empty();
+                            $('.noti-any').append('There are only  ' + stocksavailable + '  stocks left');
+                            
+                            $('#onlineSingleItemEnteredQuantity').val(stocksavailable);
+                            
+                            setTimeout(function()
+                            {
+                                 $('.noti-any , .noti-blanket').hide();
+                            }, 1500);
+                        }
+                        
+                    }
+
+
+				});
+
+    }
+    
 	function renderOnlineSinglePage(scanResult)
 	{
 		$(".content-cont").empty();
 		$(".content-cont").append('<img src="img/loading.gif" style="margin:15% auto; width:25%; display:block;"/>');
 
 
-				$.when($.getJSON('http://www.'+glogOrViveg+'/api4v2.php?format=json&barcode='+scanResult+'&user=wcu&pass=v1v3g')).done(function(forOnlineSingleData)
+				$.when($.getJSON('http://'+glogOrViveg+'/api4v2.php?format=json&barcode='+scanResult+'&user=wcu&pass=v1v3g')).done(function(forOnlineSingleData)
 				{
 
 						$.each(forOnlineSingleData, function( index, value ) 
@@ -240,6 +355,8 @@ function bugFix()//sometimes noti popups don't appear so we check it and make th
 
 
 					 $(".content-cont").empty();
+                    
+                   
 					if(onlineSingleItemBarcode != null && onlineSingleItemBarcode != '')
 					{
 						$(".content-cont").unload().load('online-single-item.html',  null, function()
@@ -260,13 +377,20 @@ function bugFix()//sometimes noti popups don't appear so we check it and make th
                                 $('.addToPrestaCart').after('<p class="warning">Item out of stock</p>');
                                 $('.addToPrestaCart').hide();
                             }
-                            /*
-                            setTimeout(function()
-                            {
-                                 $('.content-cont').empty();
-                                $('.content-cont').append('<p>Time Out. Please Scan Again.  <a href="#" onclick="scanner.startScanning(MWBSInitSpace.init,MWBSInitSpace.callback)">Click here</a></p>');
+                          
 
-                            }, 60000);*/
+                                onlineSingleInterval = setInterval(function()
+                                {
+
+                                   // $('.content-cont').empty();
+                                   // $('.content-cont').append('<p>Time Out. Please Scan Again.  <a href="#" onclick="scanner.startScanning(MWBSInitSpace.init,MWBSInitSpace.callback)">Click here</a></p>');
+                                    updateInfo(scanResult);
+                                    
+                                    isTimeOUtOn = 1;
+                             
+
+                                }, 10000);
+                            
 
 							/*because when item is not available, variables are not updated which causes the last avaialble item to appear on online-single-item.html... By assigning them with '' value, I can output, "iteme unavailable" when value is '' item is not available according to the api*/
 							onlineSingleItemPictureFileName = '';
@@ -285,8 +409,14 @@ function bugFix()//sometimes noti popups don't appear so we check it and make th
 					}
 					else
 					{
-						$(".content-cont").empty();
-						$(".content-cont").append('<p>Item Unavailable</p>');
+						//$(".content-cont").empty();
+						//$(".content-cont").append('<p>Item Unavailable</p>');
+                         
+                        
+                        //open presta message instead.
+                        ref = window.open('http://'+glogOrViveg+'/redirect.php?barcode='+scanResult, '_blank', 'location=no,toolbar=no');
+                        eventListeners();
+                        askExit();
 					}
 
 
@@ -399,19 +529,48 @@ function bugFix()//sometimes noti popups don't appear so we check it and make th
 	}
 
 
-	$('body').on('click','.addToPrestaCart',function()
+	$('body').on('click','.addToPrestaCart',function(event)
 	{
+        event.preventDefault();
+        
+        
+		//ref = window.open('http://'+glogOrViveg+'/index.php?barcode='+$(this).attr('data-barcode')+'&quantity='+$(this).attr('data-quantity')+'&localmobiledate='+getDateNow()+'&glog-app-access=76ef0d45220fdee3ac883a0c7565e50c', '_blank', 'location=no');
+       // eventListeners();
+        //askExit();
+            $.ajax
+            ({
 
-		ref = window.open('http://'+glogOrViveg+'/index.php?barcode='+$(this).attr('data-barcode')+'&quantity='+$(this).attr('data-quantity')+'&localmobiledate='+getDateNow()+'&glog-app-access=76ef0d45220fdee3ac883a0c7565e50c', '_blank', 'location=no,toolbar=no');
-        eventListeners();
+                type: "POST",
+                url: 'http://'+glogOrViveg+'/index.php?barcode='+$(this).attr('data-barcode')+'&quantity='+$(this).attr('data-quantity')+'&localmobiledate='+getDateNow()+'&glog-app-access=76ef0d45220fdee3ac883a0c7565e50c',
+                data: { datatest: "data-test" },
+                success: function(data)
+                {
+                     $('.noti-any , .noti-blanket').show();
+                     $('.noti-any').empty();
+                     $('.noti-any').append('<h3 class="ItemNote">Item has been added to cart</h3><br><a href="#" class="btn btn-success btn-large ScanAgain">Scan Again</a><br><br><a href="#" class="btn btn-primary btn-large proceedToCheckOut">Proceed To Checkout</a><br><br>')
+                }
+            });	
+            return false;
 
 
 	});
 
-    $('body').on('click','.viewOnlineCart',function()
+
+
+    $('body').on('click','.ScanAgain',function()
+    {
+         $('.noti-any , .noti-blanket').hide();
+         $('.noti-any').empty();
+         scanner.startScanning(MWBSInitSpace.init,MWBSInitSpace.callback);
+    });
+
+    
+
+    $('body').on('click','.viewOnlineCart , .proceedToCheckOut',function()
     {
     
-    
+        $('.noti-any , .noti-blanket').hide();
+        $('.noti-any').empty();
         ref = window.open('http://'+glogOrViveg+'/index.php?controller=order', '_blank', 'location=no,toolbar=no');
         eventListeners();
         
@@ -474,13 +633,13 @@ $('.content-cont').bind("DOMSubtreeModified",function()
 function askExit()
 { 
     $('.content-cont').empty();
-    $('.content-cont').append('<div class="row"><div class="col-md-12 col-sm-12 col-xs-12"><br><p>Would you like to exit this application?</p></div><div class="col-md-12 col-sm-12 col-xs-12"><button class="btn btn-sm btn-success noContinue">Continue Shopping</button></div><div class="col-md-12 col-sm-12 col-xs-12"><br><button class="btn btn-sm btn-danger yesExit">Exit</button></div><div class="col-md-12 col-sm-12 col-xs-12 disabledHere"></div></div>');
+    $('.content-cont').append('<div class="row"><div class="col-md-12 col-sm-12 col-xs-12"><button class="btn btn-sm btn-success noContinue">Continue Shopping</button></div><div class="col-md-12 col-sm-12 col-xs-12"><br><button class="btn btn-sm btn-danger yesExit">Exit</button></div><div class="col-md-12 col-sm-12 col-xs-12 disabledHere"></div></div>');
   						
 	if (navigator.userAgent.match(/(iPod|iPhone|iPad)/))
 	 {
 	    $('.yesExit').hide();
 
-	    $('.disabledHere').append('<button class="btn btn-sm btn-danger yesExitDisabledLook">Exit</button></div></div>');
+	    //$('.disabledHere').append('<button class="btn btn-sm btn-danger yesExitDisabledLook">Exit</button></div></div>');
   						
 	 }
 
@@ -496,87 +655,72 @@ function openHomePage()
 
 function eventListeners()
 {
+                     scanResultWhenOffline = null;//Set to null so if you goffline and go back online, it will not reload the last scanned item.
+                     ref.addEventListener('loadstart', 
+                     function(event)
+                     { 
+                         
 
-                     ref.addEventListener('loadstart', function(event) { /*alert('start: ' + event.url);*/  });
+                         /*alert('start: ' + event.url);*/
+                         if(getUrlVars(event.url)['valll'] == 'close')
+                         {
+                             //alert(getUrlVars(event.url)['valll']);
+                             askExit();
+                             ref.close();
+                         }
+                         else if(getUrlVars(event.url)['valll'] == 'scan')
+                         {      
+                              //alert(getUrlVars(event.url)['valll']);
+                              ref.close();
+                               $('.content-cont').html('<img src="img/loading.gif" style="margin:15% auto; width:25%; display:block;"/>'); 
+                                 setTimeout(function()
+                                {
+                                 scanner.startScanning(MWBSInitSpace.init,MWBSInitSpace.callback);
+                                },500);
+                         }
+                         else
+                         {
+                         		if(navigator.userAgent.match(/(iPod|iPhone|iPad)/) == null)
+                                {
+                                    
+	                                navigator.notification.activityStart("", "Please Wait....");
+                             	}
+                                /* custom loading...
+                                setTimeout(function()
+                                {       ref.insertCSS({  file: "http://viveg.net/inappbrowserfiles/startcustom.css" },function(){});
+                                 		ref.executeScript({	code: "if(($('.loadinggif').length <= 0) && ($('#customheader').length <= 0)){$('body').append('<div class=\"loadinggif-cont\"><img src=\"http://viveg.net/inappbrowserfiles/loading.gif\" class=\"loadinggif\"></div>');}"}, function(values){   });
+                                 
+                                },1000);*/
+                         }
+                         
+                     });
                     ref.addEventListener('loadstop', function(event)
 					{
-						
+						 
 
 						ref.insertCSS({  file: "http://viveg.net/inappbrowserfiles/custom.css" },function(){ /*alert('css inserted');*/});
 
-						ref.executeScript({	file: "http://viveg.net/inappbrowserfiles/customdemo.js"}, 
-                                          
-                                          function(values){
-
-                                          	 		clearInterval(bTimerId);
-                                                   	bTimerId = setInterval(
-                                                       function(values)
-                                                        {
-                                                             scancounter = 0;
-                                                             locationcounter = 0;
-                                                             closecounter = 0;
-                                                           
-                                                            ref.executeScript(
-                                                            { code:'getSomething()' },
-                                                                function(values){
-                                                                var data = values[0];
-                                                                	
-                                                                	//alert(data.func);
-                                                                    if(data.func == 'close')
-                                                                    {
-                                                                       if(closecounter == 0)
-                                                                       {
-                                                                           closecounter += 1;
-                                                                           ref.close();
-                                                                           askExit();
-                                                                           clearInterval(bTimerId);
-                                                                       }
-                                                                    }
-                                                                    else if(data.func == 'scan')
-                                                                    {
-                                                                        if(scancounter == 0)
-                                                                        {
-                                                                            scancounter += 1;
-
-                                                                          ref.close();
-                                                                            $('.content-cont').html('<img src="img/loading.gif" style="margin:15% auto; width:25%; display:block;"/>');
-                                                                            clearInterval(bTimerId);
-                                                                            setTimeout(function()
-																		    {
-
-																			   scanner.startScanning(MWBSInitSpace.init,MWBSInitSpace.callback);
-                                                                           
-																		    }, 2250);
-                                                                            //$('.navbar-nav .scan-btn').click();
-                                                                            //alert('clicked');
-                                                                            
-                                                                        }
-                                                                    }
-                                                                    else if(data.func == 'location')
-                                                                    {
-                                                                    
-                                                                      if(locationcounter == 0)
-                                                                      {
-                                                                          locationcounter += 1;
-                                                                       ref.close();
-                                                                       $('.content-cont').empty();
-                                                                       clearInterval(bTimerId);
-                                                                       chooseurl();
-                                                                      }
-                                                                    }
-                                                                  
-                                                                    
-                                                                    
-                                                            });
-                                                        }
-                                                        , 2000);                                                   
-                                                    
+						ref.executeScript({	file: "http://viveg.net/inappbrowserfiles/custom2.js"}, function(values){ /*alert(event.url);*/
+                        
+                         //hide custom loading //ref.executeScript({code:" $('.loadinggif-cont').remove();	$('.loadinggif').remove(); "},function(values){});
+                        
                         });
+                        
+                       
+                        if(navigator.userAgent.match(/(iPod|iPhone|iPad)/) == null)
+                        {
+                            
+	                        navigator.notification.activityStop();
+	                    }
 
                        
                     });
-                     ref.addEventListener('loaderror', function(event) { /*alert('error: ' + event.message);*/ });
-                     ref.addEventListener('exit', function(event) { /*alert(event.type);*/});
+                     ref.addEventListener('loaderror', function(event) { /*alert('error: ' + event.message);*/ navigator.notification.activityStop(); });
+                     ref.addEventListener('exit', function(event) { /*alert(event.type);*/  navigator.notification.activityStop();});
+    
+    
+    
+
 }
 
 function chooseurl()
@@ -584,5 +728,19 @@ function chooseurl()
     $('.noti-any').empty();
     $('.noti-any').append('<button class="btn btn-large btn-success chooseurl g-log">G-Log</button><br><br><button class="btn btn-large btn-primary chooseurl viveg">Viveg</button>');
     $('.noti-any , .noti-blanket').show();
+}
+
+
+function getUrlVars(x)
+{
+    var vars = [], hash;
+    var hashes = x.slice(x.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars;
 }
 
